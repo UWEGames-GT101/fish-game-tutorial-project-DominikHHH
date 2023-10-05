@@ -20,7 +20,7 @@ class MyASGEGame(pyasge.ASGEGame):
             settings (pyasge.GameSettings): The game settings
         """
         pyasge.ASGEGame.__init__(self, settings)
-        self.renderer.setClearColour(pyasge.COLOURS.CORNFLOWER)
+        self.renderer.setClearColour(pyasge.COLOURS.YELLOW)
 
         # create a game data object, we can store all shared game content here
         self.data = GameData()
@@ -55,7 +55,12 @@ class MyASGEGame(pyasge.ASGEGame):
         self.initFish()
 
     def initBackground(self) -> bool:
-        pass
+        if self.data.background.loadTexture("/data/images/background.png"):
+            # prioritise rendering this background first, once it has loaded successfully
+            self.data.background.z_order = -100
+            return True
+        else:
+            return False
 
     def initFish(self) -> bool:
         pass
@@ -64,12 +69,55 @@ class MyASGEGame(pyasge.ASGEGame):
         pass
 
     def initMenu(self) -> bool:
-        pass
+        self.data.fonts["MainFont"] = self.renderer.loadFont("/data/fonts/KGHAPPY.ttf", 64)
+        self.menu_text = pyasge.Text(self.data.fonts["MainFont"])
+        self.menu_text.string = "The Fish Game"
+        self.menu_text.position = [100, 100]
+        self.menu_text.colour = pyasge.COLOURS.HOTPINK
+
+        # Button for starting the game
+        self.play_option = pyasge.Text(self.data.fonts["MainFont"])
+        self.play_option.string = "START"
+        self.play_option.position = [100, 400]
+        self.play_option.colour = pyasge.COLOURS.HOTPINK
+
+        # Button for exiting the game
+        self.exit_option = pyasge.Text(self.data.fonts["MainFont"])
+        self.exit_option.string = "EXIT"
+        self.exit_option.position = [500, 400]
+        self.exit_option.colour = pyasge.COLOURS.HOTPINK
+
+        return True
 
     def clickHandler(self, event: pyasge.ClickEvent) -> None:
         pass
 
     def keyHandler(self, event: pyasge.KeyEvent) -> None:
+
+        # only act when the key is pressed, as opposed to being released
+        if event.action == pyasge.KEYS.KEY_PRESSED:
+
+            # check for both the left and right arrow keys, to cycle between the play/exit buttons
+            if event.key == pyasge.KEYS.KEY_RIGHT or event.key == pyasge.KEYS.KEY_LEFT:
+                self.menu_option = 1 - self.menu_option
+                if self.menu_option == 0:
+                    self.play_option.string = "START"
+                    self.play_option.colour = pyasge.COLOURS.HOTPINK
+                    self.exit_option.string = ">EXIT"
+                    self.exit_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
+                else:
+                    self.play_option.string = ">START"
+                    self.play_option.colour = pyasge.COLOURS.LIGHTSLATEGRAY
+                    self.exit_option.string = "EXIT"
+                    self.exit_option.colour = pyasge.COLOURS.HOTPINK
+
+            # if the enter key is then pressed, load the corresponding menu option action
+            if event.key == pyasge.KEYS.KEY_ENTER:
+                if self.menu_option == 1:
+                    self.menu = False
+                else:
+                    self.signalExit()
+
         pass
 
     def spawn(self) -> None:
@@ -94,7 +142,11 @@ class MyASGEGame(pyasge.ASGEGame):
 
         if self.menu:
             # render the menu here
-            pass
+            self.data.renderer.render(self.data.background)
+            self.data.renderer.render(self.menu_text)
+
+            self.data.renderer.render(self.play_option)
+            self.data.renderer.render(self.exit_option)
         else:
             # render the game here
             pass
