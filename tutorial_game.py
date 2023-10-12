@@ -1,5 +1,6 @@
 import random
 import pyasge
+import asyncio
 from gamedata import GameData
 
 
@@ -46,21 +47,29 @@ class MyASGEGame(pyasge.ASGEGame):
         self.exit_option = None
         self.menu_option = 0
 
-        # This is a comment
+        # Spawn in the visuals for the background
         self.data.background = pyasge.Sprite()
         self.initBackground()
 
-        #
+        # Create a menu object
         self.menu_text = None
         self.initMenu()
 
-        #
+        # Create a scoreboard object
         self.scoreboard = None
         self.initScoreboard()
 
-        # This is a comment
-        self.fish = pyasge.Sprite()
-        self.initFish()
+        # Create a timer object
+        self.timer = None
+        self.initTimer()
+
+        # Configurable amount of fish can be spawned in
+        self.fish = []
+        self.fish_num = 5
+        for i in range(self.fish_num):
+            self.fish.append(pyasge.Sprite())
+
+            self.initFish(i)
 
     def initBackground(self) -> bool:
         if self.data.background.loadTexture("/data/images/background.png"):
@@ -70,24 +79,17 @@ class MyASGEGame(pyasge.ASGEGame):
         else:
             return False
 
-    def initFish(self) -> bool:
-        if self.fish.loadTexture("/data/images/kenney_fishpack/fishTile_073.png"):
-            self.fish.z_order = 1
-            self.fish.scale = 1
-            self.fish.x = 300
-            self.fish.y = 300
-            self.spawn()
+    def initFish(self, fish_id) -> bool:
+
+        if self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_073.png"):
+            self.fish[fish_id].z_order = 1
+            self.fish[fish_id].scale = 1
+            self.fish[fish_id].x = 300
+            self.fish[fish_id].y = 300
+            self.spawn(fish_id)
             return True
 
         return False
-
-    def initScoreboard(self) -> None:
-        self.scoreboard = pyasge.Text(self.data.fonts["MainFont"])
-        self.scoreboard.x = 1300
-        self.scoreboard.y = 75
-        self.scoreboard.string = str(self.data.score).zfill(6)
-
-        pass
 
     def initMenu(self) -> bool:
         self.data.fonts["MainFont"] = self.renderer.loadFont("/data/fonts/KGHAPPY.ttf", 64)
@@ -110,17 +112,32 @@ class MyASGEGame(pyasge.ASGEGame):
 
         return True
 
+    def initScoreboard(self) -> None:
+        self.scoreboard = pyasge.Text(self.data.fonts["MainFont"])
+        self.scoreboard.x = 1300
+        self.scoreboard.y = 75
+        self.scoreboard.string = str(self.data.score).zfill(6)
+
+        pass
+
+    def initTimer(self) -> None:
+        self.timer = pyasge.Text(self.data.fonts["MainFont"])
+        self.timer.x = 1300
+        self.timer.y = 100
+        self.timer.string = str(self.data.timer)
+
     def clickHandler(self, event: pyasge.ClickEvent) -> None:
         # check to see if mouse button 1 is being pressed
         if event.action == pyasge.MOUSE.BUTTON_PRESSED and \
            event.button == pyasge.MOUSE.MOUSE_BTN1:
 
-            # check the mouse position is inside of the sprite's bounding box
-            if isInside(self.fish, event.x, event.y):
-                self.data.score += 1
-                self.scoreboard.string = str(self.data.score).zfill(6)
-                self.spawn() # put the fish in a different position to continue the game
-
+            # check the mouse position is inside of one of the sprite's bounding box
+            if len(self.fish) > 0:
+                for i in range(self.fish_num):
+                    if isInside(self.fish[i], event.x, event.y):
+                        self.data.score += 1
+                        self.scoreboard.string = str(self.data.score).zfill(6)
+                        self.spawn(i)  # put the fish in a different position to continue the game
         pass
 
     def keyHandler(self, event: pyasge.KeyEvent) -> None:
@@ -155,14 +172,22 @@ class MyASGEGame(pyasge.ASGEGame):
 
         pass
 
-    def spawn(self) -> None:
+    def spawn(self, fish_id) -> None:
         # generate random coordinates (x,y) for the fish to spawn in (ensuring the fish does not spawn on edges)
         # reduced margin of spawning error with multiplication
-        x = random.randint(0, self.data.game_res[0] - self.fish.width * 2)
-        y = random.randint(0, self.data.game_res[1] - self.fish.height * 2)
+        x = random.randint(0, self.data.game_res[0] - self.fish[fish_id].width * 2)
+        y = random.randint(0, self.data.game_res[1] - self.fish[fish_id].height * 2)
 
-        self.fish.x = x
-        self.fish.y = y
+        self.fish[fish_id].x = x
+        self.fish[fish_id].y = y
+        # move_task = asyncio.create_task(self.moveFish(self.fish.x, self.fish.y, x, y))
+        pass
+
+    async def moveFish (self, old_x, old_y, new_x, new_y):
+        # gradually moves the fish from one position to another
+        await asyncio.sleep(2)
+        self.fish.x = new_x
+        self.fish.y = new_y
         pass
 
     def update(self, game_time: pyasge.GameTime) -> None:
@@ -173,6 +198,9 @@ class MyASGEGame(pyasge.ASGEGame):
         else:
             # update the game here
             pass
+
+        # timer keeps track of playtime
+        self.data.timer += pyasge.GameTime.fixed_delta
 
     def render(self, game_time: pyasge.GameTime) -> None:
         """
@@ -192,7 +220,8 @@ class MyASGEGame(pyasge.ASGEGame):
         else:
             # render the game here
             self.data.renderer.render(self.data.background)
-            self.data.renderer.render(self.fish)
+            for i in range(self.fish_num):
+                self.data.renderer.render(self.fish[i])
             self.data.renderer.render(self.scoreboard)
             pass
 
