@@ -1,3 +1,4 @@
+import datetime
 import random
 import pyasge
 import asyncio
@@ -81,13 +82,25 @@ class MyASGEGame(pyasge.ASGEGame):
 
     def initFish(self, fish_id) -> bool:
 
-        if self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_073.png"):
-            self.fish[fish_id].z_order = 1
-            self.fish[fish_id].scale = 1
-            self.fish[fish_id].x = 300
-            self.fish[fish_id].y = 300
-            self.spawn(fish_id)
-            return True
+        match fish_id:
+            case 0:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_073.png")
+            case 1:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_075.png")
+            case 2:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_077.png")
+            case 3:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_079.png")
+            case 4:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_81.png")
+            case _:
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_073.png")
+
+        self.fish[fish_id].z_order = 1
+        self.fish[fish_id].scale = 1
+        self.fish[fish_id].x = 300
+        self.fish[fish_id].y = 300
+        self.spawn(fish_id)
 
         return False
 
@@ -199,8 +212,12 @@ class MyASGEGame(pyasge.ASGEGame):
             # update the game here
             pass
 
+    def fixed_update(self, game_time: pyasge.GameTime) -> None:
+
         # timer keeps track of playtime
-        self.data.timer += pyasge.GameTime.fixed_delta
+        # self.data.timer + datetime.timedelta.seconds
+
+        pass
 
     def render(self, game_time: pyasge.GameTime) -> None:
         """

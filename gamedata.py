@@ -15,4 +15,4 @@ class GameData:
         self.inputs = None
         self.renderer = None
         self.score = 0
-        self.timer = 0
+        self.timer = 0.0
