@@ -1,5 +1,6 @@
 import datetime
 import random
+import math
 import pyasge
 import asyncio
 from gamedata import GameData
@@ -64,13 +65,23 @@ class MyASGEGame(pyasge.ASGEGame):
         self.timer = None
         self.initTimer()
 
-        # Configurable amount of fish can be spawned in
+        # Configurable fish settings
+        # Spawn amount, movement speed
         self.fish = []
+        self.fish_spawn_x = []
+        self.fish_spawn_y = []
+
         self.fish_num = 5
         for i in range(self.fish_num):
             self.fish.append(pyasge.Sprite())
-
+            self.fish_spawn_x.append(0)
+            self.fish_spawn_y.append(0)
             self.initFish(i)
+
+        self.fish_speed = 2.5
+        self.fish_sin_point = 0
+        self.fish_sin_width = 50
+        self.fish_sin_height = 50
 
     def initBackground(self) -> bool:
         if self.data.background.loadTexture("/data/images/background.png"):
@@ -92,14 +103,16 @@ class MyASGEGame(pyasge.ASGEGame):
             case 3:
                 self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_079.png")
             case 4:
-                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_81.png")
+                self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_081.png")
             case _:
                 self.fish[fish_id].loadTexture("/data/images/kenney_fishpack/fishTile_073.png")
 
         self.fish[fish_id].z_order = 1
         self.fish[fish_id].scale = 1
+
         self.fish[fish_id].x = 300
         self.fish[fish_id].y = 300
+
         self.spawn(fish_id)
 
         return False
@@ -188,11 +201,15 @@ class MyASGEGame(pyasge.ASGEGame):
     def spawn(self, fish_id) -> None:
         # generate random coordinates (x,y) for the fish to spawn in (ensuring the fish does not spawn on edges)
         # reduced margin of spawning error with multiplication
-        x = random.randint(0, self.data.game_res[0] - self.fish[fish_id].width * 2)
-        y = random.randint(0, self.data.game_res[1] - self.fish[fish_id].height * 2)
+        x = random.randint(0, math.trunc(self.data.game_res[0] - self.fish[fish_id].width * 2))
+        y = random.randint(0, math.trunc(self.data.game_res[1] - self.fish[fish_id].height * 2))
 
         self.fish[fish_id].x = x
         self.fish[fish_id].y = y
+
+        self.fish_spawn_x[fish_id] = x
+        self.fish_spawn_y[fish_id] = y
+
         # move_task = asyncio.create_task(self.moveFish(self.fish.x, self.fish.y, x, y))
         pass
 
@@ -213,6 +230,12 @@ class MyASGEGame(pyasge.ASGEGame):
             pass
 
     def fixed_update(self, game_time: pyasge.GameTime) -> None:
+
+        self.fish_sin_point += self.fish_speed
+
+        for i in range(5):
+            self.fish[i].y = self.fish_spawn_y[i] + (math.sin(self.fish_sin_point / self.fish_sin_width) * self.fish_sin_height)
+            print(self.fish[0].y)
 
         # timer keeps track of playtime
         # self.data.timer + datetime.timedelta.seconds
